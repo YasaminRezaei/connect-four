@@ -1,6 +1,7 @@
 from cProfile import label
 import imp
 import math
+from multiprocessing.sharedctypes import Value
 from random import random
 import numpy as np
 import pygame
@@ -101,6 +102,63 @@ def winning_move(board, piece):
         for r in range(3, ROW_COUNTS):
             if board[r][c] == piece and board[r-1][c+1] == piece and board[r-2][c+2] == piece and board[r-3][c+3] == piece:
                 return True
+
+ # -------------------------------------------------
+ # is_terminal_node
+ # return true if terminal(connect 4) sonst false
+
+
+def is_terminal_node(board):
+    return winning_move(board, PLAYER_PIECE1) or winning_move(board, PLAYER_PIECE2) or len(get_valid_locations(board)) == 0
+
+ # -----------------------------------------------
+
+
+def minimax(board, depth, maximizing_player):
+    valid_locations = get_valid_locations(board)
+    is_terminal = is_terminal_node(board)
+    if depth == 0 or is_terminal:
+        if is_terminal:
+            # each one of is_terminal_node condition
+            if winning_move(board, PLAYER_PIECE1):
+                return (None, 10000000000000)
+            elif winning_move(board, PLAYER_PIECE2):
+                return (None, -10000000000000)
+            else:  # Game is over,no more valid moves
+                return (None, 0)
+        else:  # depth is 0
+            # find heuristic value
+            return (None, score_position(board, PLAYER_PIECE1))
+    if maximizing_player:
+        Value = -math.inf
+        column = random.choice(valid_locations)
+        for col in valid_locations:
+            row = get_next_open_row(board, col)
+            boad_copy = board.copy()
+            # if maximizing player1_piece
+            drop_piece(boad_copy, row, col, PLAYER_PIECE1)
+            # no longer maximizing player,now minimizing player
+            new_score = minimax(boad_copy, depth-1, False)[1]
+            if new_score > Value:
+                Value = new_score
+                column = col
+
+        return column, Value
+
+    else:  # mininmizing player
+        Value = math.inf
+        column = random.choice(valid_locations)
+        for col in valid_locations:
+            row = get_next_open_row(board, col)
+            boad_copy = board.copy()
+            drop_piece(boad_copy, row, col, PLAYER_PIECE2)
+            # to switch maximizing player
+            new_score = minimax(boad_copy, depth-1, True)[1]
+            if new_score < Value:
+                Value = new_score
+                column = col
+        return column, Value
+
  # ----------------------------------------------
  # evaluated window für player 1
  # hier evaluieren wir unser board.bei rot oder gelb, wir geben score.
@@ -129,6 +187,7 @@ def evaluate_window(window, piece):
 
 # ----------------------------------------------
 # score
+
 
 def score_position(board, piece):
     score = 0
@@ -168,7 +227,6 @@ def score_position(board, piece):
 
 # ---------------------------------------------
 # pic best move
-# hier wird board überprüft und wird best move nach score ausgewählt
 def pick_best_move(board, piece):
 
     valid_locations = get_valid_locations(board)
@@ -186,7 +244,6 @@ def pick_best_move(board, piece):
 
 # ----------------------------------------------
 # get valid locations
-# hier bekommen wir ein array von mögliche locations
 
 
 def get_valid_locations(board):
@@ -197,7 +254,6 @@ def get_valid_locations(board):
     return valid_locations
 
 # ----------------------------------------------
-# GUI
 
 
 def drow_board(board):
@@ -262,15 +318,18 @@ while not game_over:
                 pygame.draw.circle(
                     screen, YELLOW, (posx, int(SQUARESIZE/2)), RADIUS)
         pygame.display.update()
-        # controllieren
+        # on click
         if event.type == pygame.MOUSEMOTION:
             pygame.draw.rect(screen, BLACK, (0, 0, width, SQUARESIZE))
 
            # Ask for player 1 input
             if turn == PLAYER1:
-                column = pick_best_move(board, PLAYER_PIECE1)
+                # vorher war so
+                #column = pick_best_move(board, PLAYER_PIECE1)
+                # jetzt mit mini max
+                column, minimax_score = minimax(board, 4, False)
+
                 if is_valid_location(board, column):
-                    pygame.time.wait(2000)
                     row = get_next_open_row(board, column)
                     drop_piece(board, row, column, PLAYER_PIECE1)
 
@@ -289,11 +348,13 @@ while not game_over:
     # Ask for player 2 input
     if turn == PLAYER2 and not game_over:
 
-        #column = random.randint(0, COLUMN_COUNTS-1)
-        column = pick_best_move(board, PLAYER_PIECE2)
+        # vorher war so
+        #column = pick_best_move(board, PLAYER_PIECE2)
+        # jetz with minimax
+        column, minimax_score = minimax(board, 4, True)
 
         if is_valid_location(board, column):
-            pygame.time.wait(2000)
+            pygame.time.wait(500)
             row = get_next_open_row(board, column)
             drop_piece(board, row, column, PLAYER_PIECE2)
 
