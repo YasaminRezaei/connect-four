@@ -1,7 +1,5 @@
 import mesa
 
-from mesa.visualization.modules import CanvasGrid
-from mesa.visualization.ModularVisualization import ModularServer
 from model import ConnectFour
 from agents import Player
 
@@ -17,12 +15,14 @@ def get_players_agents(model):
 
 
 def player_portrayal(agent):
+
     if agent is None:
         return
 
     portrayal = {}
 
     if isinstance(agent, Player):
+
         portrayal["Shape"] = "circle"
         portrayal["r"] = 0.5
         portrayal["Layer"] = 0
@@ -36,7 +36,6 @@ def player_portrayal(agent):
             color = RED
 
         portrayal["Color"] = color
-
     return portrayal
 
 

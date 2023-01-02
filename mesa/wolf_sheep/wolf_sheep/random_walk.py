@@ -1,9 +1,14 @@
+"""
+Generalized behavior for random walking, one grid cell at a time.
+"""
+
 import mesa
 
 
 class RandomWalker(mesa.Agent):
     """
     Class implementing random walker methods in a generalized manner.
+
     Not intended to be used on its own, but to inherit its methods to multiple
     other agents.
     """
@@ -11,7 +16,6 @@ class RandomWalker(mesa.Agent):
     grid = None
     x = None
     y = None
-    # use a Moore neighborhood
     moore = True
 
     def __init__(self, unique_id, pos, model, moore=True):
@@ -31,7 +35,7 @@ class RandomWalker(mesa.Agent):
         Step one cell in any allowable direction.
         """
         # Pick the next cell from the adjacent cells.
-        #next_moves = self.model.grid.find_empty()
-        #next_move = self.random.choice(next_moves)
+        next_moves = self.model.grid.get_neighborhood(self.pos, self.moore, True)
+        next_move = self.random.choice(next_moves)
         # Now move:
-        self.model.grid.move_to_empty(self)
+        self.model.grid.move_agent(self, next_move)
